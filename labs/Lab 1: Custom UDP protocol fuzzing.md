@@ -283,6 +283,8 @@ Querying gdb for the contents of RSP using 'x/gx $rsp' gives an output of 0x6261
 
 
 
+
 **Verification / Findings**
+
 In this instance, I did not create shell code for an exploit or attempt anything further. I mainly wanted to see how this custom protocol looked in Wireshark while running a local daemon. The different scripts attempted for fuzzing helped me understand how those payloads landed in RSP when the program crashed, how the payloads display in Wireshark (and therefore ingested by any packet sniffing defense tools), and pwntools helped calculate the offset much faster. Beyond this experiment, I moved on to other labs to find out ways to get the right memory address to land the payload, packing the payload, and executing shellcode on both Windows and Linux binaries. 
 
