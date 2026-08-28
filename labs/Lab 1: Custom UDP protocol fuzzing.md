@@ -1,5 +1,5 @@
 
-## Mechanics of custom protocol and binary analysis
+## Custom UDP protocol and binary analysis
 
 My goal was to learn more about buffer overflow and binary analysis outside of online platforms. Using generative AI to help create some different pieces helped me solidify how this vulnerable program looked from multiple angles while learning a little more about Wireshark, C code, and various binary analysis tools. This little experiment is simple to set-up and helped me solidify calculating the memory offset. 
 
@@ -199,7 +199,13 @@ The daemon will look like this:
 Next, I'll run the daemon using gdb and test again:
 <img width="878" height="741" alt="image" src="https://github.com/user-attachments/assets/4b54ac3a-d079-41af-89ab-2e371c832e9a" />
 
-Now to create Python script fuzz the daemon for the buffer overflow. This script simply increments the payload up to a maximum # of bytes to see if we can crash the program. 
+
+Wireshark captures the following:
+<img width="1463" height="525" alt="image" src="https://github.com/user-attachments/assets/e85d7f2d-68eb-4588-98fb-3a3b82cf756d" />
+
+
+
+Now to create Python script fuzz the daemon by sending payloads of different sizes until we crash the program. In doing so, we can calculate the memory offset, which is the point where we need to insert our code if we were attempting to exploit the program. The Python script below simply increments the payload up to a maximum # of bytes as a first attempt:
 
 ```python
 import socket
@@ -245,8 +251,11 @@ print("[*] Fuzzing sequence completed.")
 
 ```
 
-Next, I learned about pwntools and creating a De Bruijn cyclic pattern (Metasploit also has this ability or you can create a manual function). A cyclic pattern will allow you to find the offset much quicker than testing payloads of different lengths like the above. Replace the incrementing payload with 'pattern = cyclic(2000)' for example. The gdb output looks like this:
+
+Next, I learned about pwntools and creating a De Bruijn cyclic pattern (Metasploit also has this ability or you can create a manual function). A cyclic pattern will allow you to find the offset much quicker than testing payloads of different lengths like the above. Replace the incrementing payload with 'pattern = cyclic(2000)' for example while adding an import: 'from pwn import cyclic'. The gdb output looks like this:
+
 <img width="927" height="308" alt="image" src="https://github.com/user-attachments/assets/c33d5366-1f53-46da-b096-7dc5cc172538" />
+
 
 For fun, here is the manual cyclic pattern version:
 
@@ -268,10 +277,11 @@ pattern = de_bruijn_cyclic(2100)
 
 
 Querying gdb for the contents of RSP using 'x/gx $rsp' gives an output of 0x6261616362616162. This is a portion of the cyclic pattern that was sent earlier. Next we can use pwntools to find the exact offset: 
+
 <img width="417" height="40" alt="image" src="https://github.com/user-attachments/assets/fb3d305f-15cf-4253-b0f4-0564e124e9d4" />
 
 
 
 **Verification / Findings**
-
+In this instance, I did not create shell code for an exploit or attempt anything further. I mainly wanted to see how this custom protocol looked in Wireshark while running a local daemon. The different scripts attempted for fuzzing helped me understand how those payloads landed in RSP when the program crashed, how the payloads display in Wireshark (and therefore ingested by any packet sniffing defense tools), and pwntools helped calculate the offset much faster. Beyond this experiment, I moved on to other labs to find out ways to get the right memory address to land the payload, packing the payload, and executing shellcode on both Windows and Linux binaries. 
 
