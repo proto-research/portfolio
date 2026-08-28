@@ -4,6 +4,7 @@
 My goal was to learn more about buffer overflow and binary analysis outside of online platforms. Using generative AI to help create some different pieces helped me solidify how this vulnerable program looked from multiple angles while learning a little more about Wireshark, C code, and various binary analysis tools. This little experiment is simple to set-up and helped me solidify calculating the memory offset. 
 
 **Objectives**
+
 Better understand:
 + custom protocol setup using .lua
 + registering a .lua plugin in Wireshark
