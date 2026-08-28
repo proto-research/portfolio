@@ -1,15 +1,15 @@
 
 ## Custom UDP protocol and binary analysis
 
-My goal was to learn more about buffer overflow and binary analysis outside of online platforms. Using generative AI to help create some different pieces helped me solidify how this vulnerable program looked from multiple angles while learning a little more about Wireshark, C code, and various binary analysis tools. This little experiment is simple to set-up and helped me solidify calculating the memory offset. 
+My goal was to learn more about buffer overflow and binary analysis outside of online platforms. Using generative AI to help create some different pieces helped me see how this vulnerable program looked from multiple angles while learning a little more about Wireshark, C code, and various binary analysis tools. This little experiment is simple to set-up and helped solidify calculating the memory offset. 
 
 **Objectives**
 
 Better understand:
-+ custom protocol setup using .lua
++ custom protocol capture setup using .lua
 + registering a .lua plugin in Wireshark
-+ creating a C daemon vulnerable to buffer overflow
-+ fuzzing the daemon with python
++ creating a C daemon using the custom protocol
++ testing for a vulnerability to buffer overflow
 
 
 **Tools / Environment**
@@ -20,7 +20,7 @@ Better understand:
 
 
 **Building / Setup**
-+ Create daemon file
++ Create daemon.c file
 
 ```c
 #include <stdio.h>
@@ -109,7 +109,9 @@ gcc -fno-stack-protector -z execstack -no-pie -g daemon.c -o daemon
 ```
 
 + create .lua plugin for wireshark with custom protocol
++ 
 Note: not necessary to have a custom protocol, but this was something I wanted to see in action.
+
 
 ```lua
 -- Declare protocol
@@ -161,6 +163,7 @@ local udp_port = DissectorTable.get("udp.port")
 udp_port:add(9999, custom_proto)
 ```
 
+
 + load .lua plugin into Wireshark by saving the file in the specific folder for your OS (https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html)
 + plugin should be visible in About menu, Plugins tab:
 <img width="745" height="200" alt="image" src="https://github.com/user-attachments/assets/07f1bf0a-24e2-48e3-9848-1a1c82bac3b7" />
@@ -169,8 +172,9 @@ udp_port:add(9999, custom_proto)
 
 **Execution / Logic**
 
-First, start the daemon on a secondary machine/VM; in my case I had it running on a Kali Linux VM. 
+First, start the daemon program on a secondary machine/VM; in my case I had it running on a Kali Linux VM. 
 
++ make sure Wireshark is in capture mode
 + test the plugin with a simple Python script from main machine/VM terminal
 
 ```python
@@ -194,8 +198,10 @@ print(f"Sent {len(packet)} bytes to {TARGET_IP}:{TARGET_PORT}")
 I did a quick ping to make sure the VM was reachable. After running the Python test script, you should see something like this in Wireshark:
 <img width="1105" height="156" alt="image" src="https://github.com/user-attachments/assets/770f34cf-5ad1-4b85-b2f7-300297570528" />
 
+
 The daemon will look like this:
 <img width="571" height="250" alt="image" src="https://github.com/user-attachments/assets/2be55029-1646-4dd1-9b1d-b68c5444758b" />
+
 
 Next, I'll run the daemon using gdb and test again:
 <img width="878" height="741" alt="image" src="https://github.com/user-attachments/assets/4b54ac3a-d079-41af-89ab-2e371c832e9a" />
@@ -206,7 +212,7 @@ Wireshark captures the following:
 
 
 
-Now to create Python script fuzz the daemon by sending payloads of different sizes until we crash the program. In doing so, we can calculate the memory offset, which is the point where we need to insert our code if we were attempting to exploit the program. The Python script below simply increments the payload up to a maximum # of bytes as a first attempt:
+Next, I create a Python script to fuzz the daemon by sending payloads of different sizes until the program crashes. In doing so, we can calculate the memory offset, which is the point where we need to insert our code if we were attempting to exploit the program. The Python script below simply increments the payload up to a maximum # of bytes as a first attempt:
 
 ```python
 import socket
@@ -253,7 +259,7 @@ print("[*] Fuzzing sequence completed.")
 ```
 
 
-Next, I learned about pwntools and creating a De Bruijn cyclic pattern (Metasploit also has this ability or you can create a manual function). A cyclic pattern will allow you to find the offset much quicker than testing payloads of different lengths like the above. Replace the incrementing payload with 'pattern = cyclic(2000)' for example while adding an import: 'from pwn import cyclic'. The gdb output looks like this:
+Next, I learned about pwntools and creating a De Bruijn cyclic pattern (Metasploit also has this ability or you can create a manual function). A cyclic pattern will allow you to find the offset much quicker than testing payloads of different lengths like the above. Replace the incrementing payload with 'pattern = cyclic(2000)', for example, while adding an import: 'from pwn import cyclic'. The gdb output looks like this:
 
 <img width="927" height="308" alt="image" src="https://github.com/user-attachments/assets/c33d5366-1f53-46da-b096-7dc5cc172538" />
 
@@ -286,5 +292,5 @@ Querying gdb for the contents of RSP using 'x/gx $rsp' gives an output of 0x6261
 
 **Verification / Findings**
 
-In this instance, I did not create shell code for an exploit or attempt anything further. I mainly wanted to see how this custom protocol looked in Wireshark while running a local daemon. The different scripts attempted for fuzzing helped me understand how those payloads landed in RSP when the program crashed, how the payloads display in Wireshark (and therefore ingested by any packet sniffing defense tools), and pwntools helped calculate the offset much faster. Beyond this experiment, I moved on to other labs to find out ways to get the right memory address to land the payload, packing the payload, and executing shellcode on both Windows and Linux binaries. 
+In this instance, I did not create shell code for an exploit or attempt anything further. I mainly wanted to see how this custom protocol looked in Wireshark while running a local daemon. The different scripts attempted for fuzzing helped me understand how those payloads landed in RSP when the program crashed, how the payloads display in Wireshark (and therefore ingested by any packet sniffing defense tools), and pwntools aided calculating the offset much faster. Beyond this experiment, I moved on to other labs to find out ways to get the right memory address to land the payload, packing the payload, and executing shellcode on both Windows and Linux binaries. 
 
