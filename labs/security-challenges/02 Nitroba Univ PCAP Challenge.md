@@ -54,7 +54,7 @@ Frames around this activity showed same IP address, but the user agent was:
 User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en-US; rv:1.8.1.16) Gecko/20080702 Firefox/2.0.0.16
 which I tie now to the Amy person, who is also in the teacher's class. She was possibly
 in the same space while he was doing it though, so that is something to note because her
-browser was active before and after the message were send on the same network.
+browser was active before and after the message were sent on the same network.
 <br>
 <br>
 
